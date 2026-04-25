@@ -1,0 +1,66 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ] # Triggers on push to main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # 1. Development Stage
+  dev-stage:
+    environment: dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Dev Shell Commands
+        run: |
+          echo "Running Development Stage..."
+          echo "Linting HTML files..."
+          ls -R
+
+  # 2. Testing Stage
+  test-stage:
+    needs: dev-stage
+    environment: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Test Shell Commands
+        run: |
+          echo "Running Testing Stage..."
+          echo "Verifying file structure..."
+          [ -f index.html ] && echo "index.html exists" || exit 1
+
+  # 3. Production Stage (Build & Deploy)
+  prod-stage:
+    needs: test-stage
+    environment: prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Prod Shell Commands
+        run: |
+          echo "Finalizing Production Deployment..."
+          echo "Environment: $GITHUB_ENVIRONMENT"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.' # Uploads the root directory (containing index.html)
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
